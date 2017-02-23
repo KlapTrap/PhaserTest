@@ -9,6 +9,8 @@
     "watch-http-server": "^0.7.6"
   },
   "devDependencies": {
+    "phaser": "^2.6.2",
+    "phaser-state-transition": "^2.4.3",
     "source-map-loader": "^0.1.6",
     "ts-loader": "^2.0.0",
     "typescript": "^2.1.6",

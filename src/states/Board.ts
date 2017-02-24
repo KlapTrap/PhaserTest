@@ -1,5 +1,7 @@
-import { SPRITE_BLOCK_COUNT, TILE_WIDTH, TILE_HEIGHT, TILE_PADDING } from '../constants';
+import { SPRITE_BLOCK_COUNT, TILE_WIDTH, TILE_HEIGHT, TILE_PADDING, GAME_WIDTH, GAME_HEIGHT, TILE_WIDTH_SCALE, TILE_HEIGHT_SCALE } from '../constants';
 import Tile from '../classes/Tile';
+import NotificationHelper from '../helpers/notification';
+
 export default class Board extends Phaser.State {
     simon:Phaser.Group;
     N = 1;
@@ -23,20 +25,30 @@ export default class Board extends Phaser.State {
         this.tileCount = tileCount;
         this.sequenceCount = sequenceCount;
         this.sequenceList = sequenceList;
-        this.game.add.image(0, 0, bg || 'bg');
+        let image = this.game.add.image(0, 0, bg || 'bg');
+        image.scale.setTo(.68, .68);
     }
 
     public static start (game, config = {}) {
-        game.state.start('FunckFacts', true, false);
+        game.state.start('FunckFacts', null , {
+                duration: Phaser.Timer.SECOND * 0.3,
+                ease: Phaser.Easing.Exponential.InOut,
+                properties: {
+                    alpha: 0
+                }
+            }, true, false);
         setTimeout(function () {
-            game.state.start('Board', true, false, config);
-        }, 3000);   
+            game.state.start('GlitchRussia', true, false);
+            setTimeout(function () {
+                game.state.start('Board', null, null, true, false, config);
+            }, 6000);
+        }, 3000)   
     }
 
     create() {
         let that = this;
-        this.music = this.game.add.audio('disco2');
-        this.music.play();
+        // this.music = this.game.add.audio('disco2');
+        // this.music.play();
         this.buildBoard();
         this.restart();
         this.setUp();
@@ -74,12 +86,15 @@ export default class Board extends Phaser.State {
     }
 
     getGridSetting() {
-        const rowItemCount = this.tileCount / 2;
-        const gameWidth = this.game.width;
-        const boardWidth = (rowItemCount * TILE_WIDTH) + (rowItemCount * TILE_PADDING);
-        const boardPadding = (gameWidth - boardWidth) / 2;
+        // const rowItemCount = this.tileCount / 2;
+        // const gameWidth = this.game.width;
+        // const boardWidth = (rowItemCount * TILE_WIDTH) + (rowItemCount * TILE_PADDING);
+        // const boardPadding = (gameWidth - boardWidth) / 2;
         return {
-            boardPadding
+            boardPadding: {
+                x: 424,
+                y: 100
+            }
         }
     }
 
@@ -95,13 +110,14 @@ export default class Board extends Phaser.State {
 
     buildRow({rowLength, gridSettings, rowNumber}) {
         var item:Phaser.Sprite;
-        let y = 150 * rowNumber;
+        let y = 50 * rowNumber;
         if (rowNumber > 1) {
-            y += TILE_PADDING
+            y += (TILE_HEIGHT + TILE_PADDING) * (rowNumber - 1) - 8;
         }
         for (var i = 0; i < rowLength; i++) {
-            item = new Tile(this.game, gridSettings.boardPadding + (TILE_WIDTH + TILE_PADDING) * i, y, 'item', this.getRandomBlock());
+            item = new Tile(this.game, gridSettings.boardPadding.x + (TILE_WIDTH + TILE_PADDING) * i, y, 'item', this.getRandomBlock());
             // Enable input.
+            item.scale.setTo(TILE_WIDTH_SCALE, TILE_HEIGHT_SCALE);
             item.inputEnabled = true;
             item.input.start(0, true);
             item.events.onInputDown.add(this.select, this);
@@ -122,11 +138,13 @@ export default class Board extends Phaser.State {
                     this.timeCheck = this.game.time.now;
                 } else {
                     if (that.currentCount < that.N) {
-                        // that.game.paused = false;
+                        NotificationHelper.show(this.game, {
+                            time: 500,
+                            text: 'Great!'
+                        });
                         that.simonSequence();
                     } else {
                         that.simonSez = false;
-                        // that.game.paused = false;
                     }
                 }
             }
@@ -234,9 +252,5 @@ export default class Board extends Phaser.State {
         } else if (this.tryAgain) {
             this.game.debug.text('Try again!', 360, 32, 'rgb(0,0,255)');
         }
-    }
-
-    shutdown() {
-        this.music.destroy();
     }
 }
